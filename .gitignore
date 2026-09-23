@@ -3,3 +3,7 @@
 *.hpoa
 hp.json
 hp.obo
+
+# LibreOffice / Office lock files
+.~lock.*#
+~$*

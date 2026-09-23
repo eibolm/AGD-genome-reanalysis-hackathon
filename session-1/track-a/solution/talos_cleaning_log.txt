@@ -1,0 +1,23 @@
+Talos candidate table -- cleaning log
+source: session-1/track-a/messy_talos_candidates.tsv
+generated: 2026-09-23 17:46
+source rows: 16 -> unique variants: 13
+
+row 1: MANE_HGVSc '89279566CCTTCGGGG>C' is not HGVS notation and was dropped
+row 4: consequence 'non_coding' standardised to 'non_coding_transcript_exon_variant'
+row 8: consequence 'missense' standardised to 'missense_variant'
+row 8: MANE_HGVSc '135912503G>A' is not HGVS notation and was dropped
+row 9: chromosome 'chrX' normalised to 'X'
+row 9: first_tagged '14/08/2026' reformatted to '2026-08-14'
+row 11: chromosome 'chr6' normalised to '6'
+row 11: consequence 'missense' standardised to 'missense_variant'
+row 11: first_tagged '27/07/2026' reformatted to '2026-07-27'
+row 13: MANE_HGVSc '135912503G>A' is not HGVS notation and was dropped
+row 15: sample_id 'SAMPLE_1 ' normalised to 'SAMPLE_1'
+row 16: sample_id 'sample_1' normalised to 'SAMPLE_1'
+SAMPLE_1|6|52043102|C|G: source rows 3, 11 describe the same variant and were merged
+SAMPLE_1|6|52043102|C|G: merged rows disagree on mode of inheritance (Autosomal dominant vs Autosomal recessive (compound het))
+SAMPLE_1|6|52043699|T|A: source rows 6, 16 describe the same variant and were merged
+SAMPLE_1|6|52043699|T|A: merged rows disagree on mode of inheritance (Autosomal dominant vs Autosomal recessive (compound het))
+SAMPLE_1|11|32392032|G|A: source rows 10, 14 describe the same variant and were merged
+SAMPLE_1|7|93105286|T|A: Talos_category_1 is TRUE but the ClinVar column is empty/missing

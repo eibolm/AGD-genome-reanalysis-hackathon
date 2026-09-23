@@ -1,0 +1,5 @@
+# HPO data is downloaded locally, never committed.
+# Links and expected releases: session-2/projects/hpo-scribe/data/README.md
+*.hpoa
+hp.json
+hp.obo

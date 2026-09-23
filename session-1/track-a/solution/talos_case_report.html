@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Talos candidate review</title>
+<style>
+:root{
+  --bg:#ffffff; --panel:#f7f8fa; --line:#dfe3e8; --ink:#1a1d21; --muted:#5b6470;
+  --a:#b3261e; --a-bg:#fdeceb; --b:#8a5300; --b-bg:#fdf3e2; --c:#4a5560; --c-bg:#eef1f4;
+  --accent:#1b4d8f;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15181c; --panel:#1d2126; --line:#2f353c; --ink:#e8ebee; --muted:#9aa4b0;
+    --a:#ff8a80; --a-bg:#3a1f1d; --b:#ffcc80; --b-bg:#3a2e1a; --c:#b0bac4; --c-bg:#252a30;
+    --accent:#8ab4f8;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15181c; --panel:#1d2126; --line:#2f353c; --ink:#e8ebee; --muted:#9aa4b0;
+  --a:#ff8a80; --a-bg:#3a1f1d; --b:#ffcc80; --b-bg:#3a2e1a; --c:#b0bac4; --c-bg:#252a30;
+  --accent:#8ab4f8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:1280px;margin:0 auto;padding:24px 16px 64px}
+h1{font-size:1.6rem;margin:0 0 4px}
+h2{font-size:1.2rem;margin:32px 0 8px;padding-top:8px;border-top:1px solid var(--line)}
+h3{font-size:.95rem;margin:16px 0 6px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.sub{color:var(--muted);margin:0 0 20px;font-size:.9rem}
+.note{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);
+  border-radius:6px;padding:12px 14px;margin:16px 0;font-size:.88rem}
+.note p{margin:.4em 0}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:16px 0;
+  position:sticky;top:0;background:var(--bg);padding:10px 0;z-index:5;border-bottom:1px solid var(--line)}
+input[type=search]{flex:1 1 240px;min-width:180px;padding:7px 10px;border:1px solid var(--line);
+  border-radius:6px;background:var(--panel);color:var(--ink);font:inherit;font-size:.9rem}
+.controls label{font-size:.85rem;color:var(--muted);display:flex;align-items:center;gap:4px}
+button{padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:var(--panel);
+  color:var(--ink);font:inherit;font-size:.85rem;cursor:pointer}
+button:hover{border-color:var(--accent)}
+.summary{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0 14px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 12px;font-size:.85rem}
+.stat b{display:block;font-size:1.25rem;line-height:1.2}
+table{width:100%;border-collapse:collapse;font-size:.87rem}
+th,td{text-align:left;padding:8px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);
+  cursor:pointer;user-select:none;white-space:nowrap}
+th:hover{color:var(--accent)}
+tbody.cand>tr.main{cursor:pointer}
+tbody.cand:hover>tr.main{background:var(--panel)}
+tbody.cand.open>tr.main{background:var(--panel)}
+.tier{display:inline-block;min-width:1.5em;text-align:center;font-weight:700;
+  border-radius:4px;padding:1px 6px;font-size:.8rem}
+.tier.A{color:var(--a);background:var(--a-bg)}
+.tier.B{color:var(--b);background:var(--b-bg)}
+.tier.C{color:var(--c);background:var(--c-bg)}
+.gene{font-weight:600}
+.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.82rem}
+.muted{color:var(--muted)}
+.chip{display:inline-block;border:1px solid var(--line);border-radius:10px;
+  padding:0 7px;margin:1px 3px 1px 0;font-size:.74rem;background:var(--panel);white-space:nowrap}
+.detail{display:none}
+tbody.cand.open .detail{display:table-row}
+.detail td{background:var(--panel);padding:14px 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px}
+ul.why{margin:4px 0;padding-left:18px}
+ul.why li{margin:2px 0}
+ul.why.cav li{color:var(--muted)}
+dl{margin:4px 0;display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:.84rem}
+dt{color:var(--muted)}
+dd{margin:0}
+a{color:var(--accent)}
+.links a{margin-right:10px;font-size:.82rem;white-space:nowrap}
+.foot{margin-top:40px;padding-top:12px;border-top:1px solid var(--line);
+  font-size:.8rem;color:var(--muted)}
+.foot code{font-size:.95em}
+@media (max-width:720px){
+  .wrap{padding:16px}
+  table{font-size:.8rem}
+  th,td{padding:6px 5px}
+  .hide-sm{display:none}
+}
+@media print{
+  .controls,.no-print{display:none}
+  .detail{display:table-row !important}
+  body{background:#fff;color:#000}
+  tbody.cand{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Talos candidate review</h1>
+<p class="sub">Source: <span class="mono">session-1/track-a/messy_talos_candidates.tsv</span> &middot; 16 source rows condensed to
+13 unique variants across 2 cases &middot;
+coordinates interpreted as GRCh38 &middot; generated 2026-09-23 17:46</p>
+
+<div class="note no-print">
+<p><b>How to read this.</b> One row per unique variant per case, ordered by review tier.
+Click any row to open the full evidence, in-silico scores and external links.
+Every tier is derived from the fields in the source file and is spelled out under
+<i>Why prioritised</i> &mdash; there is no hidden score.</p>
+<p><b>Tier A</b> ClinVar pathogenic/likely pathogenic <i>and</i> a supporting genotype
+(loss of function, de novo, homozygous, hemizygous, or compound heterozygous in trans).
+<b>Tier B</b> one strong line of evidence without the other.
+<b>Tier C</b> everything else, including variants predicted benign &mdash; review, but not first.</p>
+<p><b>Not a clinical report.</b> Synthetic workshop data derived from the public Talos
+test fixture. No patient data. Nothing here is a clinical interpretation.</p>
+</div>
+
+<div class="controls no-print">
+<input type="search" id="q" placeholder="Filter by gene, variant, consequence, inheritance...">
+<label><input type="checkbox" class="tf" value="A" checked> A</label>
+<label><input type="checkbox" class="tf" value="B" checked> B</label>
+<label><input type="checkbox" class="tf" value="C" checked> C</label>
+<button id="expand">Expand all</button>
+<button id="collapse">Collapse all</button>
+<button id="theme">Toggle theme</button>
+</div>
+<h2 id="SAMPLE_1">SAMPLE_1</h2>
+<div class="summary"><div class="stat"><b>9</b>unique variants</div><div class="stat"><b>6</b>tier A</div><div class="stat"><b>1</b>tier B</div><div class="stat"><b>2</b>tier C</div><div class="stat"><b style="font-size:.95rem">WT1 p.Arg463Ter &mdash; stop gained (nonsense), de novo</b>leading candidate</div></div>
+<table>
+<thead><tr><th data-i="0">Tier</th><th data-i="1">Gene</th><th data-i="2">Variant</th><th data-i="3">Consequence</th><th data-i="4">Inheritance &amp; segregation</th><th data-i="5">gnomAD</th><th data-i="6">ClinVar</th><th data-i="7" class="hide-sm">Talos evidence</th></tr></thead>
+<tbody class="cand" data-tier="A" data-s="wt1 11-32392032-g-a stop_gained p.arg463ter autosomal dominant de novo pathogenic / likely pathogenic proteinuria">
+<tr class="main"><td data-v="A"><span class="tier A">A</span></td><td data-v="WT1" class="gene">WT1</td><td data-v="11-32392032-G-A"><span class="mono">p.Arg463Ter</span><br><span class="mono muted">chr11:32392032 G&gt;A</span></td><td data-v="stop_gained">Stop gained (nonsense)</td><td data-v="Autosomal dominant">Autosomal dominant<br><span class="muted">de novo &middot; proband HET / mother WT / father WT</span></td><td data-v="4.99999998737621e-07" class="mono">5e-07</td><td data-v="Pathogenic / Likely pathogenic">Pathogenic / Likely pathogenic<br><span class="muted">1 review star</span></td><td data-v="" class="hide-sm"><span class="chip">Cat 1 ClinVar</span><span class="chip">Cat 3 high impact</span><span class="chip">Cat 4 de novo</span><span class="chip">!</span></td></tr>
+<tr class="detail"><td colspan="8">
+<div class="grid">
+<div><h3>Why prioritised</h3><ul class="why"><li>ClinVar pathogenic / likely pathogenic (1 review star)</li><li>De novo in proband (both parents wild-type)</li><li>Predicted loss of function: stop gained (nonsense)</li><li>Ultra-rare in gnomAD (5e-07)</li><li>CADD 38.0</li></ul><h3>Caveats</h3><ul class="why cav"><li>Talos QC warning: AB Ratio</li><li>Reported in 2 source rows (merged)</li></ul></div>
+<div><h3>In silico</h3><dl><dt>CADD</dt><dd>38</dd><dt>REVEL</dt><dd><span class="muted">-</span></dd><dt>SIFT</dt><dd>-</dd><dt>PolyPhen</dt><dd>-</dd><dt>AlphaMissense</dt><dd><span class="muted">-</span></dd></dl></div>
+<div><h3>Annotation</h3><dl><dt>Transcript</dt><dd class="mono">ENST00000452863</dd><dt>Protein</dt><dd class="mono">ENSP00000415516</dd><dt>Biotype</dt><dd>protein_coding</dd><dt>MANE / exon</dt><dd>MANE NM_024426</dd><dt>HGVSc</dt><dd class="mono">-</dd><dt>Panels</dt><dd>Proteinuria</dd><dt>First tagged</dt><dd>2026-07-27</dd><dt>Source rows</dt><dd>10, 14</dd></dl></div>
+<div><h3>External</h3><div class="links"><a href="https://gnomad.broadinstitute.org/variant/11-32392032-G-A?dataset=gnomad_r4" target="_blank" rel="noopener">gnomAD variant</a><a href="https://gnomad.broadinstitute.org/gene/ENSG00000184937?dataset=gnomad_r4" target="_blank" rel="noopener">gnomAD gene</a><a href="https://www.ncbi.nlm.nih.gov/clinvar/?term=WT1%5Bgene%5D" target="_blank" rel="noopener">ClinVar</a><a href="https://www.ensembl.org/Homo_sapiens/Gene/Summary?g=ENSG00000184937" target="_blank" rel="noopener">Ensembl</a><a href="https://panelapp.genomicsengland.co.uk/panels/entities/WT1" target="_blank" rel="noopener">PanelApp</a><a href="https://www.omim.org/search?search=WT1" target="_blank" rel="noopener">OMIM</a></div></div>
+</div>
+</td></tr>
+</tbody>
+<tbody class="cand" data-tier="A" data-s="ankrd11 16-89279566-ccttcgggg-c frameshift_variant p.ala2323glyfs*205 autosomal dominant de novo pathogenic / likely pathogenic mendeliome">
+<tr class="main"><td data-v="A"><span class="tier A">A</span></td><td data-v="ANKRD11" class="gene">ANKRD11</td><td data-v="16-89279566-CCTTCGGGG-C"><span class="mono">p.Ala2323Glyfs*205</span><br><span class="mono muted">chr16:89279566 CCTTCGGGG&gt;C</span></td><td data-v="frameshift_variant">Frameshift</td><td data-v="Autosomal dominant">Autosomal dominant<br><span class="muted">de novo &middot; proband HET / mother WT / father WT</span></td><td data-v="0" class="mono">absent (0)</td><td data-v="Pathogenic / Likely pathogenic">Pathogenic / Likely pathogenic<br><span class="muted">1 review star</span></td><td data-v="" class="hide-sm"><span class="chip">Cat 1 ClinVar</span><span class="chip">Cat 3 high impact</span><span class="chip">Cat 4 de novo</span></td></tr>
+<tr class="detail"><td colspan="8">
+<div class="grid">
+<div><h3>Why prioritised</h3><ul class="why"><li>ClinVar pathogenic / likely pathogenic (1 review star)</li><li>De novo in proband (both parents wild-type)</li><li>Predicted loss of function: frameshift</li><li>Absent from gnomAD</li><li>CADD 34.0</li></ul></div>
+<div><h3>In silico</h3><dl><dt>CADD</dt><dd>34</dd><dt>REVEL</dt><dd><span class="muted">-</span></dd><dt>SIFT</dt><dd>-</dd><dt>PolyPhen</dt><dd>-</dd><dt>AlphaMissense</dt><dd><span class="muted">-</span></dd></dl></div>
+<div><h3>Annotation</h3><dl><dt>Transcript</dt><dd class="mono">ENST00000301030</dd><dt>Protein</dt><dd class="mono">ENSP00000301030</dd><dt>Biotype</dt><dd>protein_coding</dd><dt>MANE / exon</dt><dd>MANE NM_013275</dd><dt>HGVSc</dt><dd class="mono">-</dd><dt>Panels</dt><dd>Mendeliome</dd><dt>First tagged</dt><dd>2026-07-27</dd><dt>Source rows</dt><dd>1</dd></dl></div>
+<div><h3>External</h3><div class="links"><a href="https://gnomad.broadinstitute.org/variant/16-89279566-CCTTCGGGG-C?dataset=gnomad_r4" target="_blank" rel="noopener">gnomAD variant</a><a href="https://gnomad.broadinstitute.org/gene/ENSG00000167522?dataset=gnomad_r4" target="_blank" rel="noopener">gnomAD gene</a><a href="https://www.ncbi.nlm.nih.gov/clinvar/?term=ANKRD11%5Bgene%5D" target="_blank" rel="noopener">ClinVar</a><a href="https://www.ensembl.org/Homo_sapiens/Gene/Summary?g=ENSG00000167522" target="_blank" rel="noopener">Ensembl</a><a href="https://panelapp.genomicsengland.co.uk/panels/entities/ANKRD11" target="_blank" rel="noopener">PanelApp</a><a href="https://www.omim.org/search?search=ANKRD11" target="_blank" rel="noopener">OMIM</a></div></div>
+</div>
+</td></tr>
+</tbody>
+<tbody class="cand" data-tier="A" data-s="dars1 2-135920591-g-c missense_variant p.ala274gly autosomal recessive (compound het) paternal pathogenic / likely pathogenic mendeliome">
+<tr class="main"><td data-v="A"><span class="tier A">A</span></td><td data-v="DARS1" class="gene">DARS1</td><td data-v="2-135920591-G-C"><span class="mono">p.Ala274Gly</span><br><span class="mono muted">chr2:135920591 G&gt;C</span></td><td data-v="missense_variant">Missense</td><td data-v="Autosomal recessive (compound het)">Autosomal recessive (compound het)<br><span class="muted">paternal &middot; proband HET / mother WT / father HET</span></td><td data-v="2.49999993684469e-06" class="mono">2.5e-06</td><td data-v="Pathogenic / Likely pathogenic">Pathogenic / Likely pathogenic<br><span class="muted">1 review star</span></td><td data-v="" class="hide-sm"><span class="chip">Cat 1 ClinVar</span><span class="chip">PM5</span><span class="chip">AM likely_pathogenic</span><span class="chip">!</span></td></tr>
+<tr class="detail"><td colspan="8">
+<div class="grid">
+<div><h3>Why prioritised</h3><ul class="why"><li>ClinVar pathogenic / likely pathogenic (1 review star)</li><li>Compound heterozygous in trans with 2:135912503 G&gt;A (paternal vs maternal)</li><li>AlphaMissense likely_pathogenic (0.90)</li><li>ACMG PM5 flagged by Talos</li><li>Ultra-rare in gnomAD (2.5e-06)</li><li>CADD 29.1</li></ul><h3>Caveats</h3><ul class="why cav"><li>Talos QC warning: Low Read Depth</li></ul></div>
+<div><h3>In silico</h3><dl><dt>CADD</dt><dd>29.1</dd><dt>REVEL</dt><dd>0.771</dd><dt>SIFT</dt><dd>Deleterious (0.00)</dd><dt>PolyPhen</dt><dd>Probably damaging (0.997)</dd><dt>AlphaMissense</dt><dd>likely_pathogenic (0.895)</dd></dl></div>
+<div><h3>Annotation</h3><dl><dt>Transcript</dt><dd class="mono">ENST00000264161</dd><dt>Protein</dt><dd class="mono">ENSP00000264161</dd><dt>Biotype</dt><dd>protein_coding</dd><dt>MANE / exon</dt><dd>MANE NM_001349</dd><dt>HGVSc</dt><dd class="mono">-</dd><dt>Panels</dt><dd>Mendeliome</dd><dt>First tagged</dt><dd>2026-07-27</dd><dt>Source rows</dt><dd>7</dd></dl></div>
+<div><h3>External</h3><div class="links"><a href="https://gnomad.broadinstitute.org/variant/2-135920591-G-C?dataset=gnomad_r4" target="_blank" rel="noopener">gnomAD variant</a><a href="https://gnomad.broadinstitute.org/gene/ENSG00000115866?dataset=gnomad_r4" target="_blank" rel="noopener">gnomAD gene</a><a href="https://www.ncbi.nlm.nih.gov/clinvar/?term=DARS1%5Bgene%5D" target="_blank" rel="noopener">ClinVar</a><a href="https://www.ensembl.org/Homo_sapiens/Gene/Summary?g=ENSG00000115866" target="_blank" rel="noopener">Ensembl</a><a href="https://panelapp.genomicsengland.co.uk/panels/entities/DARS1" target="_blank" rel="noopener">PanelApp</a><a href="https://www.omim.org/search?search=DARS1" target="_blank" rel="noopener">OMIM</a></div></div>
+</div>
+</td></tr>
+</tbody>
+<tbody class="cand" data-tier="A" data-s="pkhd1 6-52043102-c-g missense_variant p.gly952arg autosomal dominant autosomal recessive (compound het) maternal pathogenic / likely pathogenic mendeliome">
+<tr class="main"><td data-v="A"><span class="tier A">A</span></td><td data-v="PKHD1" class="gene">PKHD1</td><td data-v="6-52043102-C-G"><span class="mono">p.Gly952Arg</span><br><span class="mono muted">chr6:52043102 C&gt;G</span></td><td data-v="missense_variant">Missense</td><td data-v="Autosomal dominant;Autosomal recessive (compound het)">Autosomal dominant<br>Autosomal recessive (compound het)<br><span class="muted">maternal &middot; proband HET / mother HET / father WT</span></td><td data-v="0" class="mono">absent (0)</td><td data-v="Pathogenic / Likely pathogenic">Pathogenic / Likely pathogenic<br><span class="muted">1 review star</span></td><td data-v="" class="hide-sm"><span class="chip">Cat 1 ClinVar</span><span class="chip">AM likely_pathogenic</span><span class="chip">!</span></td></tr>
+<tr class="detail"><td colspan="8">
+<div class="grid">
+<div><h3>Why prioritised</h3><ul class="why"><li>ClinVar pathogenic / likely pathogenic (1 review star)</li><li>Compound heterozygous in trans with 6:52043699 T&gt;A (maternal vs de novo)</li><li>AlphaMissense likely_pathogenic (0.90)</li><li>Absent from gnomAD</li><li>CADD 27.3</li></ul><h3>Caveats</h3><ul class="why cav"><li>Talos QC warning: Ambiguous Cat.1 MOI</li><li>Source rows disagree on mode of inheritance: Autosomal dominant vs Autosomal recessive (compound het)</li><li>Reported in 2 source rows (merged)</li></ul></div>
+<div><h3>In silico</h3><dl><dt>CADD</dt><dd>27.3</dd><dt>REVEL</dt><dd>0.612</dd><dt>SIFT</dt><dd>Deleterious (0.01)</dd><dt>PolyPhen</dt><dd>Probably damaging (0.981)</dd><dt>AlphaMissense</dt><dd>likely_pathogenic (0.8996)</dd></dl></div>
+<div><h3>Annotation</h3><dl><dt>Transcript</dt><dd class="mono">ENST00000371117</dd><dt>Protein</dt><dd class="mono">ENSP00000360158</dd><dt>Biotype</dt><dd>protein_coding</dd><dt>MANE / exon</dt><dd>MANE NM_138694</dd><dt>HGVSc</dt><dd class="mono">-</dd><dt>Panels</dt><dd>Mendeliome</dd><dt>First tagged</dt><dd>2026-07-27</dd><dt>Source rows</dt><dd>3, 11</dd></dl></div>
+<div><h3>External</h3><div class="links"><a href="https://gnomad.broadinstitute.org/variant/6-52043102-C-G?dataset=gnomad_r4" target="_blank" rel="noopener">gnomAD variant</a><a href="https://gnomad.broadinstitute.org/gene/ENSG00000170927?dataset=gnomad_r4" target="_blank" rel="noopener">gnomAD gene</a><a href="https://www.ncbi.nlm.nih.gov/clinvar/?term=PKHD1%5Bgene%5D" target="_blank" rel="noopener">ClinVar</a><a href="https://www.ensembl.org/Homo_sapiens/Gene/Summary?g=ENSG00000170927" target="_blank" rel="noopener">Ensembl</a><a href="https://panelapp.genomicsengland.co.uk/panels/entities/PKHD1" target="_blank" rel="noopener">PanelApp</a><a href="https://www.omim.org/search?search=PKHD1" target="_blank" rel="noopener">OMIM</a></div></div>
+</div>
+</td></tr>
+</tbody>
+<tbody class="cand" data-tier="A" data-s="rnu4-2 12-120291834-a-g non_coding_transcript_exon_variant  autosomal dominant de novo pathogenic / likely pathogenic mendeliome">
+<tr class="main"><td data-v="A"><span class="tier A">A</span></td><td data-v="RNU4-2" class="gene">RNU4-2</td><td data-v="12-120291834-A-G"><span class="mono">-</span><br><span class="mono muted">chr12:120291834 A&gt;G</span></td><td data-v="non_coding_transcript_exon_variant">Non-coding transcript</td><td data-v="Autosomal dominant">Autosomal dominant<br><span class="muted">de novo &middot; proband HET / mother WT / father WT</span></td><td data-v="0" class="mono">absent (0)</td><td data-v="Pathogenic / Likely pathogenic">Pathogenic / Likely pathogenic<br><span class="muted">1 review star</span></td><td data-v="" class="hide-sm"><span class="chip">Cat 1 ClinVar</span><span class="chip">Cat 4 de novo</span></td></tr>
+<tr class="detail"><td colspan="8">
+<div class="grid">
+<div><h3>Why prioritised</h3><ul class="why"><li>ClinVar pathogenic / likely pathogenic (1 review star)</li><li>De novo in proband (both parents wild-type)</li><li>Absent from gnomAD</li></ul></div>
+<div><h3>In silico</h3><dl><dt>CADD</dt><dd>18.4</dd><dt>REVEL</dt><dd><span class="muted">-</span></dd><dt>SIFT</dt><dd>-</dd><dt>PolyPhen</dt><dd>-</dd><dt>AlphaMissense</dt><dd><span class="muted">-</span></dd></dl></div>
+<div><h3>Annotation</h3><dl><dt>Transcript</dt><dd class="mono">ENST00000615667</dd><dt>Protein</dt><dd class="mono">-</dd><dt>Biotype</dt><dd>snRNA</dd><dt>MANE / exon</dt><dd>-</dd><dt>HGVSc</dt><dd class="mono">-</dd><dt>Panels</dt><dd>Mendeliome</dd><dt>First tagged</dt><dd>2026-07-27</dd><dt>Source rows</dt><dd>15</dd></dl></div>
+<div><h3>External</h3><div class="links"><a href="https://gnomad.broadinstitute.org/variant/12-120291834-A-G?dataset=gnomad_r4" target="_blank" rel="noopener">gnomAD variant</a><a href="https://gnomad.broadinstitute.org/gene/ENSG00000202538?dataset=gnomad_r4" target="_blank" rel="noopener">gnomAD gene</a><a href="https://www.ncbi.nlm.nih.gov/clinvar/?term=RNU4-2%5Bgene%5D" target="_blank" rel="noopener">ClinVar</a><a href="https://www.ensembl.org/Homo_sapiens/Gene/Summary?g=ENSG00000202538" target="_blank" rel="noopener">Ensembl</a><a href="https://panelapp.genomicsengland.co.uk/panels/entities/RNU4-2" target="_blank" rel="noopener">PanelApp</a><a href="https://www.omim.org/search?search=RNU4-2" target="_blank" rel="noopener">OMIM</a></div></div>
+</div>
+</td></tr>
+</tbody>
+<tbody class="cand" data-tier="A" data-s="rnu2-2 11-62841775-t-c non_coding_transcript_exon_variant  autosomal dominant de novo pathogenic / likely pathogenic mendeliome">
+<tr class="main"><td data-v="A"><span class="tier A">A</span></td><td data-v="RNU2-2" class="gene">RNU2-2</td><td data-v="11-62841775-T-C"><span class="mono">-</span><br><span class="mono muted">chr11:62841775 T&gt;C</span></td><td data-v="non_coding_transcript_exon_variant">Non-coding transcript</td><td data-v="Autosomal dominant">Autosomal dominant<br><span class="muted">de novo &middot; proband HET / mother WT / father WT</span></td><td data-v="0" class="mono">absent (0)</td><td data-v="Pathogenic / Likely pathogenic">Pathogenic / Likely pathogenic<br><span class="muted">1 review star</span></td><td data-v="" class="hide-sm"><span class="chip">Cat 1 ClinVar</span><span class="chip">Cat 4 de novo</span></td></tr>
+<tr class="detail"><td colspan="8">
+<div class="grid">
+<div><h3>Why prioritised</h3><ul class="why"><li>ClinVar pathogenic / likely pathogenic (1 review star)</li><li>De novo in proband (both parents wild-type)</li><li>Absent from gnomAD</li></ul></div>
+<div><h3>In silico</h3><dl><dt>CADD</dt><dd>15.2</dd><dt>REVEL</dt><dd><span class="muted">-</span></dd><dt>SIFT</dt><dd>-</dd><dt>PolyPhen</dt><dd>-</dd><dt>AlphaMissense</dt><dd><span class="muted">-</span></dd></dl></div>
+<div><h3>Annotation</h3><dl><dt>Transcript</dt><dd class="mono">ENST00000615262</dd><dt>Protein</dt><dd class="mono">-</dd><dt>Biotype</dt><dd>snRNA</dd><dt>MANE / exon</dt><dd>-</dd><dt>HGVSc</dt><dd class="mono">-</dd><dt>Panels</dt><dd>Mendeliome</dd><dt>First tagged</dt><dd>2026-07-27</dd><dt>Source rows</dt><dd>4</dd></dl></div>
+<div><h3>External</h3><div class="links"><a href="https://gnomad.broadinstitute.org/variant/11-62841775-T-C?dataset=gnomad_r4" target="_blank" rel="noopener">gnomAD variant</a><a href="https://gnomad.broadinstitute.org/gene/ENSG00000222328?dataset=gnomad_r4" target="_blank" rel="noopener">gnomAD gene</a><a href="https://www.ncbi.nlm.nih.gov/clinvar/?term=RNU2-2%5Bgene%5D" target="_blank" rel="noopener">ClinVar</a><a href="https://www.ensembl.org/Homo_sapiens/Gene/Summary?g=ENSG00000222328" target="_blank" rel="noopener">Ensembl</a><a href="https://panelapp.genomicsengland.co.uk/panels/entities/RNU2-2" target="_blank" rel="noopener">PanelApp</a><a href="https://www.omim.org/search?search=RNU2-2" target="_blank" rel="noopener">OMIM</a></div></div>
+</div>
+</td></tr>
+</tbody>
+<tbody class="cand" data-tier="B" data-s="dars1 2-135912503-g-a missense_variant p.pro405ser autosomal recessive (compound het) maternal uncertain significance (vus) mendeliome">
+<tr class="main"><td data-v="B"><span class="tier B">B</span></td><td data-v="DARS1" class="gene">DARS1</td><td data-v="2-135912503-G-A"><span class="mono">p.Pro405Ser</span><br><span class="mono muted">chr2:135912503 G&gt;A</span></td><td data-v="missense_variant">Missense</td><td data-v="Autosomal recessive (compound het)">Autosomal recessive (compound het)<br><span class="muted">maternal &middot; proband HET / mother HET / father WT</span></td><td data-v="1.50000005305628e-06" class="mono">1.5e-06</td><td data-v="Uncertain significance (VUS)">Uncertain significance (VUS)<br><span class="muted">0 review stars</span></td><td data-v="" class="hide-sm"><span class="chip">AM likely_pathogenic</span></td></tr>
+<tr class="detail"><td colspan="8">
+<div class="grid">
+<div><h3>Why prioritised</h3><ul class="why"><li>Compound heterozygous in trans with 2:135920591 G&gt;C (maternal vs paternal)</li><li>AlphaMissense likely_pathogenic (0.77)</li><li>Ultra-rare in gnomAD (1.5e-06)</li><li>CADD 25.8</li></ul><h3>Caveats</h3><ul class="why cav"><li>ClinVar: uncertain significance</li></ul></div>
+<div><h3>In silico</h3><dl><dt>CADD</dt><dd>25.8</dd><dt>REVEL</dt><dd>0.488</dd><dt>SIFT</dt><dd>Deleterious (0.02)</dd><dt>PolyPhen</dt><dd>Possibly damaging (0.734)</dd><dt>AlphaMissense</dt><dd>likely_pathogenic (0.7738)</dd></dl></div>
+<div><h3>Annotation</h3><dl><dt>Transcript</dt><dd class="mono">ENST00000264161</dd><dt>Protein</dt><dd class="mono">ENSP00000264161</dd><dt>Biotype</dt><dd>protein_coding</dd><dt>MANE / exon</dt><dd>MANE NM_001349</dd><dt>HGVSc</dt><dd class="mono">-</dd><dt>Panels</dt><dd>Mendeliome</dd><dt>First tagged</dt><dd>2026-07-27</dd><dt>Source rows</dt><dd>8</dd></dl></div>
+<div><h3>External</h3><div class="links"><a href="https://gnomad.broadinstitute.org/variant/2-135912503-G-A?dataset=gnomad_r4" target="_blank" rel="noopener">gnomAD variant</a><a href="https://gnomad.broadinstitute.org/gene/ENSG00000115866?dataset=gnomad_r4" target="_blank" rel="noopener">gnomAD gene</a><a href="https://www.ncbi.nlm.nih.gov/clinvar/?term=DARS1%5Bgene%5D" target="_blank" rel="noopener">ClinVar</a><a href="https://www.ensembl.org/Homo_sapiens/Gene/Summary?g=ENSG00000115866" target="_blank" rel="noopener">Ensembl</a><a href="https://panelapp.genomicsengland.co.uk/panels/entities/DARS1" target="_blank" rel="noopener">PanelApp</a><a href="https://www.omim.org/search?search=DARS1" target="_blank" rel="noopener">OMIM</a></div></div>
+</div>
+</td></tr>
+</tbody>
+<tbody class="cand" data-tier="C" data-s="samd9 7-93105286-t-a missense_variant p.tyr271phe autosomal dominant de novo  mendeliome">
+<tr class="main"><td data-v="C"><span class="tier C">C</span></td><td data-v="SAMD9" class="gene">SAMD9</td><td data-v="7-93105286-T-A"><span class="mono">p.Tyr271Phe</span><br><span class="mono muted">chr7:93105286 T&gt;A</span></td><td data-v="missense_variant">Missense</td><td data-v="Autosomal dominant">Autosomal dominant<br><span class="muted">de novo &middot; proband HET / mother WT / father WT</span></td><td data-v="0" class="mono">absent (0)</td><td data-v="zzz"><span class="muted">not in ClinVar</span></td><td data-v="" class="hide-sm"><span class="chip">Cat 1 ClinVar</span><span class="chip">Cat 4 de novo</span></td></tr>
+<tr class="detail"><td colspan="8">
+<div class="grid">
+<div><h3>Why prioritised</h3><ul class="why"><li>De novo in proband (both parents wild-type)</li><li>Absent from gnomAD</li></ul><h3>Caveats</h3><ul class="why cav"><li>Not present in ClinVar</li><li>Talos category 1 set but no ClinVar record in this file</li></ul></div>
+<div><h3>In silico</h3><dl><dt>CADD</dt><dd>22.6</dd><dt>REVEL</dt><dd>0.053</dd><dt>SIFT</dt><dd>Deleterious (0.050)</dd><dt>PolyPhen</dt><dd>Benign (0.406)</dd><dt>AlphaMissense</dt><dd><span class="muted">-</span></dd></dl></div>
+<div><h3>Annotation</h3><dl><dt>Transcript</dt><dd class="mono">ENST00000379958</dd><dt>Protein</dt><dd class="mono">ENSP00000369292</dd><dt>Biotype</dt><dd>protein_coding</dd><dt>MANE / exon</dt><dd>3/3</dd><dt>HGVSc</dt><dd class="mono">c.812A&gt;T</dd><dt>Panels</dt><dd>Mendeliome</dd><dt>First tagged</dt><dd>2026-07-27</dd><dt>Source rows</dt><dd>12</dd></dl></div>
+<div><h3>External</h3><div class="links"><a href="https://gnomad.broadinstitute.org/variant/7-93105286-T-A?dataset=gnomad_r4" target="_blank" rel="noopener">gnomAD variant</a><a href="https://gnomad.broadinstitute.org/gene/ENSG00000205413?dataset=gnomad_r4" target="_blank" rel="noopener">gnomAD gene</a><a href="https://www.ncbi.nlm.nih.gov/clinvar/?term=SAMD9%5Bgene%5D" target="_blank" rel="noopener">ClinVar</a><a href="https://www.ensembl.org/Homo_sapiens/Gene/Summary?g=ENSG00000205413" target="_blank" rel="noopener">Ensembl</a><a href="https://panelapp.genomicsengland.co.uk/panels/entities/SAMD9" target="_blank" rel="noopener">PanelApp</a><a href="https://www.omim.org/search?search=SAMD9" target="_blank" rel="noopener">OMIM</a></div></div>
+</div>
+</td></tr>
+</tbody>
+<tbody class="cand" data-tier="C" data-s="pkhd1 6-52043699-t-a missense_variant p.his916leu autosomal dominant autosomal recessive (compound het) de novo  mendeliome">
+<tr class="main"><td data-v="C"><span class="tier C">C</span></td><td data-v="PKHD1" class="gene">PKHD1</td><td data-v="6-52043699-T-A"><span class="mono">p.His916Leu</span><br><span class="mono muted">chr6:52043699 T&gt;A</span></td><td data-v="missense_variant">Missense</td><td data-v="Autosomal dominant;Autosomal recessive (compound het)">Autosomal dominant<br>Autosomal recessive (compound het)<br><span class="muted">de novo &middot; proband HET / mother WT / father WT</span></td><td data-v="-1" class="mono">not reported</td><td data-v="zzz"><span class="muted">not in ClinVar</span></td><td data-v="" class="hide-sm"><span class="chip">Cat 4 de novo</span><span class="chip">PM5</span><span class="chip">AM likely_benign</span></td></tr>
+<tr class="detail"><td colspan="8">
+<div class="grid">
+<div><h3>Why prioritised</h3><ul class="why"><li>De novo in proband (both parents wild-type)</li><li>Compound heterozygous in trans with 6:52043102 C&gt;G (de novo vs maternal)</li><li>ACMG PM5 flagged by Talos</li></ul><h3>Caveats</h3><ul class="why cav"><li>AlphaMissense likely_benign (0.08)</li><li>Not present in ClinVar</li><li>gnomAD frequency not reported</li><li>Source rows disagree on mode of inheritance: Autosomal dominant vs Autosomal recessive (compound het)</li><li>Reported in 2 source rows (merged)</li></ul></div>
+<div><h3>In silico</h3><dl><dt>CADD</dt><dd>22.1</dd><dt>REVEL</dt><dd>0.204</dd><dt>SIFT</dt><dd>Tolerated (0.31)</dd><dt>PolyPhen</dt><dd>Benign (0.112)</dd><dt>AlphaMissense</dt><dd>likely_benign (0.0834)</dd></dl></div>
+<div><h3>Annotation</h3><dl><dt>Transcript</dt><dd class="mono">ENST00000371117</dd><dt>Protein</dt><dd class="mono">ENSP00000360158</dd><dt>Biotype</dt><dd>protein_coding</dd><dt>MANE / exon</dt><dd>MANE NM_138694</dd><dt>HGVSc</dt><dd class="mono">-</dd><dt>Panels</dt><dd>Mendeliome</dd><dt>First tagged</dt><dd>2026-07-27</dd><dt>Source rows</dt><dd>6, 16</dd></dl></div>
+<div><h3>External</h3><div class="links"><a href="https://gnomad.broadinstitute.org/variant/6-52043699-T-A?dataset=gnomad_r4" target="_blank" rel="noopener">gnomAD variant</a><a href="https://gnomad.broadinstitute.org/gene/ENSG00000170927?dataset=gnomad_r4" target="_blank" rel="noopener">gnomAD gene</a><a href="https://www.ncbi.nlm.nih.gov/clinvar/?term=PKHD1%5Bgene%5D" target="_blank" rel="noopener">ClinVar</a><a href="https://www.ensembl.org/Homo_sapiens/Gene/Summary?g=ENSG00000170927" target="_blank" rel="noopener">Ensembl</a><a href="https://panelapp.genomicsengland.co.uk/panels/entities/PKHD1" target="_blank" rel="noopener">PanelApp</a><a href="https://www.omim.org/search?search=PKHD1" target="_blank" rel="noopener">OMIM</a></div></div>
+</div>
+</td></tr>
+</tbody>
+</table>
+<h2 id="SAMPLE_2">SAMPLE_2</h2>
+<div class="summary"><div class="stat"><b>4</b>unique variants</div><div class="stat"><b>3</b>tier A</div><div class="stat"><b>1</b>tier B</div><div class="stat"><b>0</b>tier C</div><div class="stat"><b style="font-size:.95rem">POC1B 12:89470359 &mdash; splice donor, biparental</b>leading candidate</div></div>
+<table>
+<thead><tr><th data-i="0">Tier</th><th data-i="1">Gene</th><th data-i="2">Variant</th><th data-i="3">Consequence</th><th data-i="4">Inheritance &amp; segregation</th><th data-i="5">gnomAD</th><th data-i="6">ClinVar</th><th data-i="7" class="hide-sm">Talos evidence</th></tr></thead>
+<tbody class="cand" data-tier="A" data-s="poc1b 12-89470359-a-c splice_donor_variant  autosomal recessive (homozygous) biparental pathogenic / likely pathogenic mendeliome">
+<tr class="main"><td data-v="A"><span class="tier A">A</span></td><td data-v="POC1B" class="gene">POC1B</td><td data-v="12-89470359-A-C"><span class="mono">-</span><br><span class="mono muted">chr12:89470359 A&gt;C</span></td><td data-v="splice_donor_variant">Splice donor</td><td data-v="Autosomal recessive (homozygous)">Autosomal recessive (homozygous)<br><span class="muted">biparental &middot; proband HOM / mother HET / father HET</span></td><td data-v="5e-07" class="mono">5e-07</td><td data-v="Pathogenic / Likely pathogenic">Pathogenic / Likely pathogenic<br><span class="muted">1 review star</span></td><td data-v="" class="hide-sm"><span class="chip">Cat 1 ClinVar</span><span class="chip">Cat 3 high impact</span></td></tr>
+<tr class="detail"><td colspan="8">
+<div class="grid">
+<div><h3>Why prioritised</h3><ul class="why"><li>ClinVar pathogenic / likely pathogenic (1 review star)</li><li>Predicted loss of function: splice donor</li><li>Homozygous in proband, both parents heterozygous</li><li>Ultra-rare in gnomAD (5e-07)</li><li>CADD 31.0</li></ul></div>
+<div><h3>In silico</h3><dl><dt>CADD</dt><dd>31</dd><dt>REVEL</dt><dd><span class="muted">-</span></dd><dt>SIFT</dt><dd>-</dd><dt>PolyPhen</dt><dd>-</dd><dt>AlphaMissense</dt><dd><span class="muted">-</span></dd></dl></div>
+<div><h3>Annotation</h3><dl><dt>Transcript</dt><dd class="mono">ENST00000313546</dd><dt>Protein</dt><dd class="mono">ENSP00000322047</dd><dt>Biotype</dt><dd>protein_coding</dd><dt>MANE / exon</dt><dd>MANE NM_172240</dd><dt>HGVSc</dt><dd class="mono">-</dd><dt>Panels</dt><dd>Mendeliome</dd><dt>First tagged</dt><dd>2026-08-14</dd><dt>Source rows</dt><dd>2</dd></dl></div>
+<div><h3>External</h3><div class="links"><a href="https://gnomad.broadinstitute.org/variant/12-89470359-A-C?dataset=gnomad_r4" target="_blank" rel="noopener">gnomAD variant</a><a href="https://gnomad.broadinstitute.org/gene/ENSG00000139323?dataset=gnomad_r4" target="_blank" rel="noopener">gnomAD gene</a><a href="https://www.ncbi.nlm.nih.gov/clinvar/?term=POC1B%5Bgene%5D" target="_blank" rel="noopener">ClinVar</a><a href="https://www.ensembl.org/Homo_sapiens/Gene/Summary?g=ENSG00000139323" target="_blank" rel="noopener">Ensembl</a><a href="https://panelapp.genomicsengland.co.uk/panels/entities/POC1B" target="_blank" rel="noopener">PanelApp</a><a href="https://www.omim.org/search?search=POC1B" target="_blank" rel="noopener">OMIM</a></div></div>
+</div>
+</td></tr>
+</tbody>
+<tbody class="cand" data-tier="A" data-s="dars1 2-135920591-g-c missense_variant p.ala274gly autosomal recessive (compound het) maternal pathogenic / likely pathogenic mendeliome">
+<tr class="main"><td data-v="A"><span class="tier A">A</span></td><td data-v="DARS1" class="gene">DARS1</td><td data-v="2-135920591-G-C"><span class="mono">p.Ala274Gly</span><br><span class="mono muted">chr2:135920591 G&gt;C</span></td><td data-v="missense_variant">Missense</td><td data-v="Autosomal recessive (compound het)">Autosomal recessive (compound het)<br><span class="muted">maternal &middot; proband HET / mother HET / father WT</span></td><td data-v="2.5e-06" class="mono">2.5e-06</td><td data-v="Pathogenic / Likely pathogenic">Pathogenic / Likely pathogenic<br><span class="muted">1 review star</span></td><td data-v="" class="hide-sm"><span class="chip">Cat 1 ClinVar</span><span class="chip">PM5</span><span class="chip">AM likely_pathogenic</span></td></tr>
+<tr class="detail"><td colspan="8">
+<div class="grid">
+<div><h3>Why prioritised</h3><ul class="why"><li>ClinVar pathogenic / likely pathogenic (1 review star)</li><li>Compound heterozygous in trans with 2:135912503 G&gt;A (maternal vs paternal)</li><li>AlphaMissense likely_pathogenic (0.90)</li><li>ACMG PM5 flagged by Talos</li><li>Ultra-rare in gnomAD (2.5e-06)</li><li>CADD 29.1</li></ul></div>
+<div><h3>In silico</h3><dl><dt>CADD</dt><dd>29.1</dd><dt>REVEL</dt><dd>0.771</dd><dt>SIFT</dt><dd>Deleterious (0.00)</dd><dt>PolyPhen</dt><dd>Probably damaging (0.997)</dd><dt>AlphaMissense</dt><dd>likely_pathogenic (0.895)</dd></dl></div>
+<div><h3>Annotation</h3><dl><dt>Transcript</dt><dd class="mono">ENST00000264161</dd><dt>Protein</dt><dd class="mono">ENSP00000264161</dd><dt>Biotype</dt><dd>protein_coding</dd><dt>MANE / exon</dt><dd>MANE NM_001349</dd><dt>HGVSc</dt><dd class="mono">-</dd><dt>Panels</dt><dd>Mendeliome</dd><dt>First tagged</dt><dd>2026-08-14</dd><dt>Source rows</dt><dd>5</dd></dl></div>
+<div><h3>External</h3><div class="links"><a href="https://gnomad.broadinstitute.org/variant/2-135920591-G-C?dataset=gnomad_r4" target="_blank" rel="noopener">gnomAD variant</a><a href="https://gnomad.broadinstitute.org/gene/ENSG00000115866?dataset=gnomad_r4" target="_blank" rel="noopener">gnomAD gene</a><a href="https://www.ncbi.nlm.nih.gov/clinvar/?term=DARS1%5Bgene%5D" target="_blank" rel="noopener">ClinVar</a><a href="https://www.ensembl.org/Homo_sapiens/Gene/Summary?g=ENSG00000115866" target="_blank" rel="noopener">Ensembl</a><a href="https://panelapp.genomicsengland.co.uk/panels/entities/DARS1" target="_blank" rel="noopener">PanelApp</a><a href="https://www.omim.org/search?search=DARS1" target="_blank" rel="noopener">OMIM</a></div></div>
+</div>
+</td></tr>
+</tbody>
+<tbody class="cand" data-tier="A" data-s="il2rg x-71109321-g-a missense_variant p.arg222cys x-linked recessive maternal pathogenic / likely pathogenic mendeliome immunological disorders_superpanel">
+<tr class="main"><td data-v="A"><span class="tier A">A</span></td><td data-v="IL2RG" class="gene">IL2RG</td><td data-v="X-71109321-G-A"><span class="mono">p.Arg222Cys</span><br><span class="mono muted">chrX:71109321 G&gt;A</span></td><td data-v="missense_variant">Missense</td><td data-v="X-linked recessive">X-linked recessive<br><span class="muted">maternal &middot; proband HEMI / mother HET / father WT</span></td><td data-v="4.99999998737621e-07" class="mono">5e-07</td><td data-v="Pathogenic / Likely pathogenic">Pathogenic / Likely pathogenic<br><span class="muted">3 review stars</span></td><td data-v="" class="hide-sm"><span class="chip">Cat 1 ClinVar</span><span class="chip">AM ambiguous</span></td></tr>
+<tr class="detail"><td colspan="8">
+<div class="grid">
+<div><h3>Why prioritised</h3><ul class="why"><li>ClinVar pathogenic / likely pathogenic (3 review stars)</li><li>Hemizygous in proband, maternally inherited</li><li>Ultra-rare in gnomAD (5e-07)</li></ul><h3>Caveats</h3><ul class="why cav"><li>AlphaMissense ambiguous (0.47)</li></ul></div>
+<div><h3>In silico</h3><dl><dt>CADD</dt><dd>24.7</dd><dt>REVEL</dt><dd>0.532</dd><dt>SIFT</dt><dd>Deleterious (0.03)</dd><dt>PolyPhen</dt><dd>Possibly damaging (0.612)</dd><dt>AlphaMissense</dt><dd>ambiguous (0.4702)</dd></dl></div>
+<div><h3>Annotation</h3><dl><dt>Transcript</dt><dd class="mono">ENST00000374202</dd><dt>Protein</dt><dd class="mono">ENSP00000363318</dd><dt>Biotype</dt><dd>protein_coding</dd><dt>MANE / exon</dt><dd>MANE NM_000206</dd><dt>HGVSc</dt><dd class="mono">-</dd><dt>Panels</dt><dd>Mendeliome; Immunological disorders_SuperPanel</dd><dt>First tagged</dt><dd>2026-08-14</dd><dt>Source rows</dt><dd>9</dd></dl></div>
+<div><h3>External</h3><div class="links"><a href="https://gnomad.broadinstitute.org/variant/X-71109321-G-A?dataset=gnomad_r4" target="_blank" rel="noopener">gnomAD variant</a><a href="https://gnomad.broadinstitute.org/gene/ENSG00000147168?dataset=gnomad_r4" target="_blank" rel="noopener">gnomAD gene</a><a href="https://www.ncbi.nlm.nih.gov/clinvar/?term=IL2RG%5Bgene%5D" target="_blank" rel="noopener">ClinVar</a><a href="https://www.ensembl.org/Homo_sapiens/Gene/Summary?g=ENSG00000147168" target="_blank" rel="noopener">Ensembl</a><a href="https://panelapp.genomicsengland.co.uk/panels/entities/IL2RG" target="_blank" rel="noopener">PanelApp</a><a href="https://www.omim.org/search?search=IL2RG" target="_blank" rel="noopener">OMIM</a></div></div>
+</div>
+</td></tr>
+</tbody>
+<tbody class="cand" data-tier="B" data-s="dars1 2-135912503-g-a missense_variant p.pro405ser autosomal recessive (compound het) paternal uncertain significance (vus) mendeliome">
+<tr class="main"><td data-v="B"><span class="tier B">B</span></td><td data-v="DARS1" class="gene">DARS1</td><td data-v="2-135912503-G-A"><span class="mono">p.Pro405Ser</span><br><span class="mono muted">chr2:135912503 G&gt;A</span></td><td data-v="missense_variant">Missense</td><td data-v="Autosomal recessive (compound het)">Autosomal recessive (compound het)<br><span class="muted">paternal &middot; proband HET / mother WT / father HET</span></td><td data-v="1.5e-06" class="mono">1.5e-06</td><td data-v="Uncertain significance (VUS)">Uncertain significance (VUS)<br><span class="muted">0 review stars</span></td><td data-v="" class="hide-sm"><span class="chip">AM likely_pathogenic</span></td></tr>
+<tr class="detail"><td colspan="8">
+<div class="grid">
+<div><h3>Why prioritised</h3><ul class="why"><li>Compound heterozygous in trans with 2:135920591 G&gt;C (paternal vs maternal)</li><li>AlphaMissense likely_pathogenic (0.77)</li><li>Ultra-rare in gnomAD (1.5e-06)</li><li>CADD 25.8</li></ul><h3>Caveats</h3><ul class="why cav"><li>ClinVar: uncertain significance</li></ul></div>
+<div><h3>In silico</h3><dl><dt>CADD</dt><dd>25.8</dd><dt>REVEL</dt><dd>0.488</dd><dt>SIFT</dt><dd>Deleterious (0.02)</dd><dt>PolyPhen</dt><dd>Possibly damaging (0.734)</dd><dt>AlphaMissense</dt><dd>likely_pathogenic (0.7738)</dd></dl></div>
+<div><h3>Annotation</h3><dl><dt>Transcript</dt><dd class="mono">ENST00000264161</dd><dt>Protein</dt><dd class="mono">ENSP00000264161</dd><dt>Biotype</dt><dd>protein_coding</dd><dt>MANE / exon</dt><dd>MANE NM_001349</dd><dt>HGVSc</dt><dd class="mono">-</dd><dt>Panels</dt><dd>Mendeliome</dd><dt>First tagged</dt><dd>2026-08-14</dd><dt>Source rows</dt><dd>13</dd></dl></div>
+<div><h3>External</h3><div class="links"><a href="https://gnomad.broadinstitute.org/variant/2-135912503-G-A?dataset=gnomad_r4" target="_blank" rel="noopener">gnomAD variant</a><a href="https://gnomad.broadinstitute.org/gene/ENSG00000115866?dataset=gnomad_r4" target="_blank" rel="noopener">gnomAD gene</a><a href="https://www.ncbi.nlm.nih.gov/clinvar/?term=DARS1%5Bgene%5D" target="_blank" rel="noopener">ClinVar</a><a href="https://www.ensembl.org/Homo_sapiens/Gene/Summary?g=ENSG00000115866" target="_blank" rel="noopener">Ensembl</a><a href="https://panelapp.genomicsengland.co.uk/panels/entities/DARS1" target="_blank" rel="noopener">PanelApp</a><a href="https://www.omim.org/search?search=DARS1" target="_blank" rel="noopener">OMIM</a></div></div>
+</div>
+</td></tr>
+</tbody>
+</table>
+<h2>Appendix &mdash; what was cleaned</h2>
+<div class="note"><p>The source file mixes encodings for the same facts.
+Every change below is mechanical and reversible; nothing was inferred beyond the
+rules listed here.</p></div>
+<ul class="why">
+<li><b>Sample IDs</b> trimmed and upper-cased (<span class="mono">sample_1</span>, <span class="mono">'SAMPLE_1 '</span> &rarr; <span class="mono">SAMPLE_1</span>).</li>
+<li><b>Chromosomes</b> stripped of the <span class="mono">chr</span> prefix so <span class="mono">chr6</span> and <span class="mono">6</span> collapse to one variant.</li>
+<li><b>Booleans</b> unified from <span class="mono">TRUE/True/yes/1</span> and <span class="mono">FALSE/False/no/0</span>.</li>
+<li><b>Talos category 4</b> holds a sample ID, not a boolean; it is read as de novo only when it matches that row's own sample.</li>
+<li><b>Modes of inheritance</b> mapped to full phrases (<span class="mono">AD</span> and <span class="mono">Autosomal Dominant</span> are the same thing).</li>
+<li><b>Genotypes</b> parsed out of the embedded JSON and used to infer parental origin and compound-heterozygous phase.</li>
+<li><b>Protein changes</b> stripped of accession prefixes and parentheses, and converted to three-letter code (<span class="mono">p.P405S</span> &rarr; <span class="mono">p.Pro405Ser</span>).</li>
+<li><b>HGVSc</b> kept only where it is real HGVS; pseudo-notation such as <span class="mono">135912503G&gt;A</span> was dropped in favour of the genomic coordinate.</li>
+<li><b>gnomAD AF</b> rounded to three significant figures, removing float noise (<span class="mono">2.499999936844688e-06</span> &rarr; <span class="mono">2.5e-06</span>).</li>
+<li><b>ClinVar</b> synonyms merged (<span class="mono">P/LP</span>, <span class="mono">VUS</span>).</li>
+<li><b>Null markers</b> <span class="mono">missing</span>, <span class="mono">.</span> and empty all treated as no data.</li>
+<li><b>Dates</b> converted to ISO (<span class="mono">14/08/2026</span> &rarr; <span class="mono">2026-08-14</span>).</li>
+<li><b>Duplicates</b> merged on sample + position + alleles: 16 source rows &rarr; 13 unique variants.</li>
+</ul>
+<h3>Flags raised while cleaning</h3>
+<ul class="why cav">
+<li>row 1: MANE_HGVSc '89279566CCTTCGGGG&gt;C' is not HGVS notation and was dropped</li>
+<li>row 4: consequence 'non_coding' standardised to 'non_coding_transcript_exon_variant'</li>
+<li>row 8: consequence 'missense' standardised to 'missense_variant'</li>
+<li>row 8: MANE_HGVSc '135912503G&gt;A' is not HGVS notation and was dropped</li>
+<li>row 9: chromosome 'chrX' normalised to 'X'</li>
+<li>row 9: first_tagged '14/08/2026' reformatted to '2026-08-14'</li>
+<li>row 11: chromosome 'chr6' normalised to '6'</li>
+<li>row 11: consequence 'missense' standardised to 'missense_variant'</li>
+<li>row 11: first_tagged '27/07/2026' reformatted to '2026-07-27'</li>
+<li>row 13: MANE_HGVSc '135912503G&gt;A' is not HGVS notation and was dropped</li>
+<li>row 15: sample_id 'SAMPLE_1 ' normalised to 'SAMPLE_1'</li>
+<li>row 16: sample_id 'sample_1' normalised to 'SAMPLE_1'</li>
+<li>SAMPLE_1|6|52043102|C|G: source rows 3, 11 describe the same variant and were merged</li>
+<li>SAMPLE_1|6|52043102|C|G: merged rows disagree on mode of inheritance (Autosomal dominant vs Autosomal recessive (compound het))</li>
+<li>SAMPLE_1|6|52043699|T|A: source rows 6, 16 describe the same variant and were merged</li>
+<li>SAMPLE_1|6|52043699|T|A: merged rows disagree on mode of inheritance (Autosomal dominant vs Autosomal recessive (compound het))</li>
+<li>SAMPLE_1|11|32392032|G|A: source rows 10, 14 describe the same variant and were merged</li>
+<li>SAMPLE_1|7|93105286|T|A: Talos_category_1 is TRUE but the ClinVar column is empty/missing</li>
+</ul>
+<div class="foot">
+<p>Generated by <code>tidy_talos.pl / tidy_talos.py</code> from <code>session-1/track-a/messy_talos_candidates.tsv</code> on 2026-09-23 17:46.
+Assembly (GRCh38) is inferred from the coordinates, not declared in the source file &mdash;
+confirm before using the external links.
+Talos category labels follow the public Talos documentation; check them against your Talos version.</p>
+<p>Synthetic workshop data. No patient data. Not a clinical report.</p>
+</div>
+</div>
+<script>
+(function(){
+  document.querySelectorAll('tbody.cand>tr.main').forEach(function(r){
+    r.addEventListener('click',function(){ r.parentNode.classList.toggle('open'); });
+  });
+  document.getElementById('expand').onclick=function(){
+    document.querySelectorAll('tbody.cand').forEach(function(t){t.classList.add('open');});
+  };
+  document.getElementById('collapse').onclick=function(){
+    document.querySelectorAll('tbody.cand').forEach(function(t){t.classList.remove('open');});
+  };
+  document.getElementById('theme').onclick=function(){
+    var r=document.documentElement;
+    var dark=getComputedStyle(document.body).backgroundColor==='rgb(21, 24, 28)';
+    r.setAttribute('data-theme', dark?'light':'dark');
+  };
+  function apply(){
+    var q=document.getElementById('q').value.toLowerCase().trim();
+    var tiers=Array.prototype.filter.call(document.querySelectorAll('.tf'),function(c){return c.checked;})
+      .map(function(c){return c.value;});
+    document.querySelectorAll('tbody.cand').forEach(function(t){
+      var ok=tiers.indexOf(t.dataset.tier)>-1 && (!q || t.dataset.s.indexOf(q)>-1);
+      t.style.display = ok ? '' : 'none';
+    });
+  }
+  document.getElementById('q').addEventListener('input',apply);
+  document.querySelectorAll('.tf').forEach(function(c){c.addEventListener('change',apply);});
+
+  document.querySelectorAll('th[data-i]').forEach(function(th){
+    th.addEventListener('click',function(){
+      var table=th.closest('table'), i=+th.dataset.i;
+      var dir=th.dataset.dir==='asc'?-1:1;
+      table.querySelectorAll('th[data-i]').forEach(function(o){delete o.dataset.dir;});
+      th.dataset.dir=dir===1?'asc':'desc';
+      var bodies=Array.prototype.slice.call(table.querySelectorAll('tbody.cand'));
+      bodies.sort(function(a,b){
+        var x=a.querySelector('tr.main').children[i].dataset.v||'';
+        var y=b.querySelector('tr.main').children[i].dataset.v||'';
+        var nx=parseFloat(x), ny=parseFloat(y);
+        if(!isNaN(nx)&&!isNaN(ny)) return (nx-ny)*dir;
+        return x.localeCompare(y)*dir;
+      });
+      bodies.forEach(function(t){table.appendChild(t);});
+    });
+  });
+})();
+</script>
+</body>
+</html>

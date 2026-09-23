@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>hpo-scribe</title>
+<style>
+:root{
+  --bg:#ffffff; --panel:#f6f7f9; --line:#dde1e6; --ink:#16191d; --muted:#5c6570;
+  --accent:#1b5e9f; --ok:#1c7a4a; --ok-bg:#e8f5ee; --warn:#8a5300; --warn-bg:#fdf3e2;
+  --bad:#a52a21; --bad-bg:#fbeceb;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14171b; --panel:#1c2026; --line:#2e343b; --ink:#e7eaee; --muted:#98a2ae;
+    --accent:#7fb0f0; --ok:#6ed79f; --ok-bg:#16301f; --warn:#ffcc80; --warn-bg:#352a17;
+    --bad:#ff9a90; --bad-bg:#361d1b;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding:22px 16px 72px}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;justify-content:space-between}
+h1{font-size:1.4rem;margin:0}
+h1 span{font-weight:400;color:var(--muted);font-size:.85rem;margin-left:8px}
+.meta{font-size:.8rem;color:var(--muted)}
+.bar{height:1px;background:var(--line);margin:14px 0 18px}
+textarea{width:100%;min-height:170px;padding:12px 14px;border:1px solid var(--line);
+  border-radius:8px;background:var(--panel);color:var(--ink);font:inherit;resize:vertical}
+textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
+button{padding:8px 15px;border:1px solid var(--line);border-radius:7px;background:var(--panel);
+  color:var(--ink);font:inherit;font-size:.9rem;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--accent)}
+button:disabled{opacity:.5;cursor:default}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+input[type=text]{padding:7px 11px;border:1px solid var(--line);border-radius:7px;
+  background:var(--panel);color:var(--ink);font:inherit;font-size:.9rem}
+.grow{flex:1 1 200px;min-width:160px}
+.hint{font-size:.78rem;color:var(--muted)}
+kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;
+  padding:0 4px;font-size:.75rem;font-family:ui-monospace,Consolas,monospace}
+.status{margin:14px 0;padding:10px 13px;border-radius:7px;font-size:.88rem;display:none}
+.status.show{display:block}
+.status.err{background:var(--bad-bg);color:var(--bad);border:1px solid var(--bad)}
+.status.info{background:var(--panel);border:1px solid var(--line);color:var(--muted)}
+.status.good{background:var(--ok-bg);color:var(--ok);border:1px solid var(--ok)}
+table{width:100%;border-collapse:collapse;font-size:.88rem;margin-top:6px}
+th,td{text-align:left;padding:8px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+tr.off td:not(.keepcell){opacity:.42}
+.id{font-family:ui-monospace,Consolas,monospace;font-size:.84rem;white-space:nowrap}
+.label{font-weight:600}
+.span{color:var(--muted);font-style:italic}
+.tag{display:inline-block;border-radius:10px;padding:0 7px;font-size:.72rem;
+  border:1px solid var(--line);margin-right:4px;white-space:nowrap}
+.tag.neg{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.tag.sus{background:var(--warn-bg);color:var(--warn);border-color:var(--warn)}
+.tag.none{background:var(--warn-bg);color:var(--warn);border-color:var(--warn)}
+.reason{font-size:.8rem;color:var(--muted);margin-top:3px}
+select{padding:5px 8px;border:1px solid var(--line);border-radius:6px;
+  background:var(--bg);color:var(--ink);font:inherit;font-size:.82rem;max-width:330px}
+.results{margin-top:8px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.results:empty{display:none}
+.hit{display:flex;gap:10px;padding:7px 11px;border-bottom:1px solid var(--line);
+  cursor:pointer;font-size:.86rem;align-items:baseline}
+.hit:last-child{border-bottom:0}
+.hit:hover,.hit.sel{background:var(--panel)}
+.hit .id{color:var(--muted)}
+footer{margin-top:34px;padding-top:12px;border-top:1px solid var(--line);
+  font-size:.78rem;color:var(--muted)}
+@media (max-width:640px){.hide-sm{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>hpo-scribe <span>clinical text &rarr; HPO terms</span></h1>
+  <div class="meta" id="vocabmeta">loading vocabulary&hellip;</div>
+</header>
+<div class="bar"></div>
+
+<textarea id="text" placeholder="Paste or type clinical text in any language.
+
+Beispiel: Der 4-jahrige Junge zeigt eine Mikrozephalie und Kleinwuchs. Wiederkehrende Krampfanfalle seit dem zweiten Lebensjahr. Ein Herzfehler wurde ausgeschlossen."></textarea>
+
+<div class="row">
+  <button class="primary" id="run">Annotate</button>
+  <span class="hint"><kbd>Ctrl</kbd>+<kbd>Enter</kbd></span>
+  <input type="text" id="annotator" class="grow" placeholder="annotator (your name or initials)">
+  <button id="clear">Clear</button>
+</div>
+
+<div class="status" id="status"></div>
+
+<div id="out"></div>
+
+<div id="saveblock" style="display:none">
+  <div class="row">
+    <button class="primary" id="save">Save annotation</button>
+    <button id="copy">Copy JSON</button>
+    <span class="hint" id="savehint"></span>
+  </div>
+</div>
+
+<div class="bar"></div>
+<h1 style="font-size:1rem">Look up a term by hand</h1>
+<p class="hint" style="margin:2px 0 8px">Searches the same allowed vocabulary. No API call, no cost &mdash;
+use it to check what the tool could have picked.</p>
+<input type="text" id="q" class="grow" style="width:100%" placeholder="e.g. seizure, kleinwuchs won't match &mdash; search in English">
+<div class="results" id="hits"></div>
+
+<footer>
+  Output is restricted to HPO terms that appear in <code>phenotype.hpoa</code>. The model
+  proposes; the vocabulary decides. Synthetic and public text only &mdash; no
+  patient-identifiable material.
+</footer>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+let current = null, vocab = null;
+
+function status(msg, kind){
+  const el = $('#status');
+  el.className = 'status show ' + (kind || 'info');
+  el.textContent = msg;
+}
+function hideStatus(){ $('#status').className = 'status'; }
+
+async function loadVocab(){
+  try{
+    vocab = await (await fetch('/api/vocab')).json();
+    $('#vocabmeta').textContent =
+      vocab.size.toLocaleString() + ' allowed terms · ' + vocab.release + ' · ' + vocab.model
+      + (vocab.saved ? ' · ' + vocab.saved + ' saved' : '');
+    if(!vocab.have_key){
+      status('ANTHROPIC_API_KEY is not set, so annotation will fail. Manual lookup below still works.', 'err');
+    }
+  }catch(e){ $('#vocabmeta').textContent = 'vocabulary unavailable'; }
+}
+
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function render(ann){
+  current = ann;
+  const rows = ann.mentions.map((m, i) => {
+    const tags = (m.negated ? '<span class="tag neg">negated</span>' : '')
+      + (m.certainty === 'suspected' ? '<span class="tag sus">suspected</span>' : '')
+      + (!m.hpo_id && !m.rejected ? '<span class="tag none">no term</span>' : '')
+      + (m.rejected ? '<span class="tag neg">rejected</span>' : '');
+    // Every option here comes from the retrieved candidates, so a correction
+    // cannot introduce a term that is outside the vocabulary either.
+    const opts = ['<option value="">— no term —</option>'].concat(
+      (m.candidates||[]).map(c =>
+        `<option value="${esc(c.hpo_id)}" ${c.hpo_id===m.hpo_id?'selected':''}>`
+        + `${esc(c.hpo_id)} ${esc(c.label)}${c.matched!==c.label?' ← '+esc(c.matched):''}</option>`)
+    ).join('');
+    const keep = m.hpo_id && !m.negated;
+    return `<tr class="${keep?'':'off'}" data-i="${i}">
+      <td class="keepcell"><input type="checkbox" class="keep" ${keep?'checked':''}></td>
+      <td class="id">${esc(m.hpo_id||'')}</td>
+      <td><span class="label">${esc(m.label||'')}</span> ${tags}
+          <div class="span">&ldquo;${esc(m.span)}&rdquo; → ${esc(m.english)}</div>
+          ${m.reason?`<div class="reason">${esc(m.reason)}</div>`:''}
+          ${m.rejected?`<div class="reason" style="color:var(--bad)">${esc(m.rejected)}</div>`:''}
+      </td>
+      <td class="hide-sm"><select class="pick">${opts}</select></td>
+    </tr>`;
+  }).join('');
+
+  const kept = ann.mentions.filter(m => m.hpo_id && !m.negated).length;
+  $('#out').innerHTML = ann.mentions.length ? `
+    <p class="hint">${ann.mentions.length} finding(s), ${kept} mapped to a term.
+       Tick what to keep; the dropdown offers the other retrieved candidates.</p>
+    <table><thead><tr><th>Keep</th><th>HPO&nbsp;ID</th><th>Term / source</th>
+    <th class="hide-sm">Change to</th></tr></thead><tbody>${rows}</tbody></table>
+    <p class="hint">tokens in/out: ${ann.usage.total_input_tokens}/${ann.usage.total_output_tokens}</p>`
+    : '<p class="hint">No phenotypic abnormality found in that text.</p>';
+
+  $('#saveblock').style.display = ann.mentions.length ? '' : 'none';
+  $('#out').querySelectorAll('.pick').forEach(sel => {
+    sel.addEventListener('change', e => {
+      const tr = e.target.closest('tr'), i = +tr.dataset.i, id = e.target.value;
+      const m = current.mentions[i];
+      const c = (m.candidates||[]).find(x => x.hpo_id === id);
+      m.hpo_id = id || null;
+      m.label = c ? c.label : null;
+      m.corrected = true;
+      tr.querySelector('.id').textContent = id || '';
+      tr.querySelector('.label').textContent = c ? c.label : '';
+      tr.querySelector('.keep').checked = !!id && !m.negated;
+      tr.classList.toggle('off', !id);
+    });
+  });
+  $('#out').querySelectorAll('.keep').forEach(cb => {
+    cb.addEventListener('change', e =>
+      e.target.closest('tr').classList.toggle('off', !e.target.checked));
+  });
+}
+
+function record(){
+  const terms = [];
+  $('#out').querySelectorAll('tbody tr').forEach(tr => {
+    if(!tr.querySelector('.keep').checked) return;
+    const m = current.mentions[+tr.dataset.i];
+    if(!m.hpo_id) return;
+    terms.push({hpo_id:m.hpo_id, label:m.label, span:m.span, english:m.english,
+                negated:m.negated, certainty:m.certainty,
+                source: m.corrected ? 'annotator' : 'suggested'});
+  });
+  return {text:current.text, terms, annotator:$('#annotator').value.trim()||'unknown',
+          model:current.model, vocabulary_release:current.vocabulary_release,
+          created_at:current.created_at, usage:current.usage};
+}
+
+async function run(){
+  const text = $('#text').value.trim();
+  if(!text){ status('Nothing to annotate.', 'err'); return; }
+  $('#run').disabled = true;
+  status('Annotating… (two model calls: extract, then choose)', 'info');
+  const t0 = performance.now();
+  try{
+    const r = await fetch('/api/annotate', {method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({text, annotator: $('#annotator').value.trim()})});
+    const data = await r.json();
+    if(!r.ok){ status(data.error || 'annotation failed', 'err'); return; }
+    render(data);
+    status(`Done in ${((performance.now()-t0)/1000).toFixed(1)}s.`, 'good');
+  }catch(e){ status('request failed: ' + e.message, 'err'); }
+  finally{ $('#run').disabled = false; }
+}
+
+$('#run').onclick = run;
+$('#text').addEventListener('keydown', e => {
+  if((e.ctrlKey||e.metaKey) && e.key === 'Enter') run();
+});
+$('#clear').onclick = () => {
+  $('#text').value=''; $('#out').innerHTML='';
+  $('#saveblock').style.display='none'; hideStatus(); $('#text').focus();
+};
+$('#save').onclick = async () => {
+  const rec = record();
+  if(!rec.terms.length){ status('Nothing ticked to save.', 'err'); return; }
+  const r = await fetch('/api/save', {method:'POST',
+    headers:{'Content-Type':'application/json'}, body: JSON.stringify({record: rec})});
+  const data = await r.json();
+  if(!r.ok){ status(data.error || 'save failed', 'err'); return; }
+  status(`Saved ${rec.terms.length} term(s). ${data.saved} annotation(s) in annotations.jsonl.`, 'good');
+  loadVocab();
+};
+$('#copy').onclick = async () => {
+  await navigator.clipboard.writeText(JSON.stringify(record(), null, 2));
+  status('JSON copied to clipboard.', 'good');
+};
+
+let timer = null;
+$('#q').addEventListener('input', e => {
+  clearTimeout(timer);
+  const q = e.target.value.trim();
+  if(!q){ $('#hits').innerHTML=''; return; }
+  timer = setTimeout(async () => {
+    const d = await (await fetch('/api/search?q=' + encodeURIComponent(q))).json();
+    $('#hits').innerHTML = d.results.map(h =>
+      `<div class="hit"><span class="id">${esc(h.hpo_id)}</span>
+       <span>${esc(h.label)}${h.matched!==h.label?` <span class="hint">← ${esc(h.matched)}</span>`:''}</span>
+       <span class="hint" style="margin-left:auto">${h.score.toFixed(2)}</span></div>`).join('')
+      || '<div class="hit hint">no match in the allowed vocabulary</div>';
+  }, 180);
+});
+
+loadVocab();
+$('#text').focus();
+</script>
+</body>
+</html>

@@ -13,11 +13,13 @@ from pathlib import Path
 
 from pptx import Presentation
 from pptx.dml.color import RGBColor
+from pptx.enum.dml import MSO_LINE_DASH_STYLE
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.util import Inches, Pt
 
 OUT = Path(__file__).parent / 'hpo-scribe-presentation.pptx'
+ASSETS = Path(__file__).parent / 'deck-assets'
 
 W, H = Inches(13.333), Inches(7.5)
 MARGIN = Inches(0.72)
@@ -96,6 +98,45 @@ def panel(slide, x, y, w, h, fill=PANEL):
 
 def notes(slide, text):
     slide.notes_slide.notes_text_frame.text = text.strip()
+
+
+def screenshot(slide, name, x, y, w, h, caption=None):
+    """Place deck-assets/<name> fitted inside the box, or a labelled placeholder.
+
+    Aspect ratio is preserved without needing PIL: python-pptx scales from whichever
+    single dimension you give it, so add at full width and re-add by height if that
+    overflows the box.
+    """
+    path = ASSETS / name
+    if path.exists():
+        pic = slide.shapes.add_picture(str(path), x, y, width=w)
+        if pic.height > h:
+            pic._element.getparent().remove(pic._element)
+            pic = slide.shapes.add_picture(str(path), x, y, height=h)
+        pic.left = x + int((w - pic.width) / 2)
+        pic.top = y + int((h - pic.height) / 2)
+        pic.line.color.rgb = LINE
+        pic.line.width = Pt(0.75)
+        if caption:
+            t = textbox(slide, x, y + h + Inches(0.06), w, Inches(0.3))
+            para(t, caption, size=11.5, color=MUTED, align=PP_ALIGN.CENTER, first=True)
+        return pic
+
+    box = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, x, y, w, h)
+    box.fill.solid()
+    box.fill.fore_color.rgb = PANEL
+    box.line.color.rgb = MUTED
+    box.line.width = Pt(1)
+    box.line.dash_style = MSO_LINE_DASH_STYLE.DASH
+    box.adjustments[0] = 0.03
+    box.shadow.inherit = False
+    t = textbox(slide, x + Inches(0.2), y + h / 2 - Inches(0.34), w - Inches(0.4),
+                Inches(0.7), anchor=MSO_ANCHOR.MIDDLE)
+    para(t, 'screenshot goes here', size=14, bold=True, color=MUTED,
+         align=PP_ALIGN.CENTER, first=True, space_after=3)
+    para(t, f'deck-assets/{name}  —  then re-run make_deck.py', size=11.5,
+         color=MUTED, align=PP_ALIGN.CENTER)
+    return None
 
 
 # ---------------------------------------------------------------- slide 1 ---
@@ -317,6 +358,46 @@ it, so we say so.
 
 
 # ---------------------------------------------------------------- slide 5 ---
+def slide_streamlit(prs):
+    s = blank(prs)
+    heading(s, 'A second interface, in Streamlit', '~20 sec')
+
+    t = textbox(s, MARGIN, Inches(1.5), W - 2 * MARGIN, Inches(0.45))
+    para(t, 'Same pipeline, a different front end — the annotation logic is a '
+             'library, not part of the UI.', size=18, bold=True, first=True)
+
+    screenshot(s, 'streamlit-main.png', MARGIN, Inches(2.1), Inches(7.45), Inches(4.05),
+               caption='Streamlit interface')
+
+    t = textbox(s, Inches(8.45), Inches(2.1), Inches(4.15), Inches(4.0))
+    para(t, 'Why two', size=16, bold=True, color=MUTED, first=True, space_after=7)
+    bullet(t, 'hpo_vocab.py and annotate.py hold the vocabulary, the search and the '
+              'three-stage pipeline.',
+           sub='Neither imports anything about a UI, so a second front end reuses '
+               'them unchanged — and inherits the same guarantee.',
+           size=14, space_before=0)
+    bullet(t, 'The stdlib server has zero dependencies beyond anthropic.',
+           sub='Runs anywhere Python does, no install step for a reviewer.', size=14)
+    bullet(t, '[TODO: what the Streamlit version does better — say it in one line]',
+           sub='Replace this with the honest reason it exists.', size=14)
+    notes(s, """
+20 sec. This slide is a bonus, not a pillar - if you are running long, cut it and
+mention the second UI in one sentence on slide 4 instead.
+
+The point worth making is architectural, not cosmetic: the constraint that output can
+only be a phenotype.hpoa term lives in the library, so BOTH interfaces inherit it. A
+UI cannot weaken it, and neither can a human using one - the correction dropdown only
+offers retrieved candidates, and the save path re-validates.
+
+>>> Replace the third bullet with the real reason the Streamlit version exists. <<<
+>>> Drop the screenshot into deck-assets/streamlit-main.png and re-run make_deck.py. <<<
+
+Adding this slide pushes the deck to six. Slide 4 should come down to about 1:40 to
+keep the whole thing inside five minutes including questions.
+""")
+
+
+# ---------------------------------------------------------------- slide 6 ---
 def slide_limits(prs):
     s = blank(prs)
     heading(s, 'Limits, and working with Claude', '~45 sec')
@@ -373,7 +454,9 @@ more convincing than a feature list.
 def main():
     prs = Presentation()
     prs.slide_width, prs.slide_height = W, H
-    for build in (slide_title, slide_problem, slide_how, slide_result, slide_limits):
+    ASSETS.mkdir(exist_ok=True)
+    for build in (slide_title, slide_problem, slide_how, slide_result,
+                  slide_streamlit, slide_limits):
         build(prs)
     prs.save(OUT)
     print(f'wrote {OUT}  ({len(prs.slides.__iter__.__self__._sldIdLst)} slides)')

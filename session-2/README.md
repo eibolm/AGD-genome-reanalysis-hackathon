@@ -9,6 +9,8 @@ Individual challenge descriptions:
 * [Challenge 5 — Open pitch](/session-2/challenge-5-open-pitch.md)
 * [Challenge 6 — HPO annotation tool](/session-2/challenge-6-hpo-annotation.md)
 * [Challenge 7 — Interactive exploration of computational facial phenotyping results](/session-2/challenge-7-facial-phenotyping.md)
+* [Challenge 8 — Find patients matching trial criteria](/session-2/challenge-8-cohort-finder.md)
+* [Challenge 9 — Undiagnosed patient investigation](/session-2/challenge-9-undiagnosed-investigation.md)
 
 ## Challenges 1 - 3
 
@@ -90,6 +92,42 @@ demo_data/
     ├── 2_aligned.json
     └── ...
 ```
+
+## Challenges 8 and 9
+
+`phenopackets.jsonl` holds 100 synthetic PhenoTips family exports, one JSON object per line and one line per patient record (`FAM0002001` … `FAM0002100`), each in [Phenopacket schema v1.0.0](https://phenopacket-schema.readthedocs.io/en/1.0.0/) `Family` form. Together they hold 100 probands and 529 relatives. The data is intentionally artificial and must not be presented as clinical evidence.
+
+### Shape
+
+```
+{
+  "id": "FAM0002001",
+  "proband":   { phenopacket },
+  "relatives": [ { phenopacket }, ... ],
+  "pedigree":  { "persons": [ { "familyId", "individualId", "paternalId"?, "maternalId"?, "sex" }, ... ] },
+  "metaData":  { "created", "createdBy", "resources": [ ... ] }
+}
+```
+
+A phenopacket has `id` (UUID), `subject { id, dateOfBirth?, sex }`, `phenotypicFeatures[] { type { id, label }, negated? }`, `genes[] { id, alternateIds, symbol }`, `diseases[] { term { id, label } }` and `metaData`. Empty lists are omitted, not written as `[]`. Every phenopacket repeats the same `metaData.resources` block; that is how PhenoTips exports.
+
+### Data dictionary
+
+| What | Where | Example |
+|---|---|---|
+| Patient record | proband `subject.id` | `P0003001` |
+| Pedigree-only relative | relative `subject.id` | `"0"`, `"1"`, … |
+| Parent links | `pedigree.persons[].paternalId` / `maternalId`; founders have neither | |
+| Molecular (final) diagnosis | `diseases[].term.id` with prefix `MIM:` | `MIM:604370` |
+| Clinical diagnosis | `diseases[].term.id` with prefix `ORDO:` (Orphanet) | `ORDO:145` |
+| Gene finding | `genes[]`, HGNC id plus Ensembl id and symbol | `HGNC:1100` / `BRCA1` |
+| Phenotype | `phenotypicFeatures[].type`, HPO release 2024-08-13 | `HP:0003002` Breast carcinoma |
+| Excluded phenotype | `phenotypicFeatures[].negated: true` | |
+| Family history | relatives' `phenotypicFeatures` and `diseases`, joined to the proband through `pedigree.persons` | |
+| Age | `subject.dateOfBirth`, year precision; absent for 20% of probands and most relatives | `1978-01-01T00:00:00Z` |
+| Affected status | not exported; derive it from the relative's record | |
+
+A patient can have a gene finding without a diagnosis, a clinical diagnosis without a gene, both, or neither. Roughly a third of the probands have neither. The organisers hold the table used to generate the files.
 
 ## Important data policy
 

@@ -38,6 +38,15 @@ VOCAB = None          # loaded at startup
 VOCAB_LOCK = threading.Lock()
 
 
+class Server(ThreadingHTTPServer):
+    # Windows lets a second process bind a port that is already in use when
+    # SO_REUSEADDR is set, and the stale process keeps serving requests. Refusing
+    # to reuse the address turns that into a loud startup error instead of a
+    # confusing session spent talking to a server you thought you had replaced.
+    allow_reuse_address = False
+    daemon_threads = True
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = 'hpo-scribe'
 
@@ -150,8 +159,15 @@ def main() -> None:
         print('  search will work, but annotation will fail until you set it.\n')
 
     url = f'http://{HOST}:{PORT}'
+    try:
+        server = Server((HOST, PORT), Handler)
+    except OSError as exc:
+        raise SystemExit(
+            f'cannot bind {HOST}:{PORT} ({exc}).\n'
+            f'Another hpo-scribe is probably still running - stop it first, or set '
+            f'a different port at the top of server.py.'
+        )
     print(f'serving {url}  (ctrl-c to stop)')
-    server = ThreadingHTTPServer((HOST, PORT), Handler)
     threading.Timer(0.5, lambda: webbrowser.open(url)).start()
     try:
         server.serve_forever()

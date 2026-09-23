@@ -266,6 +266,14 @@ def annotate(text: str, vocab: hpo_vocab.Vocabulary, annotator: str = 'unknown',
 if __name__ == '__main__':
     import sys
 
+    # The input is non-English by design; a Windows console defaults to cp1252
+    # and would mangle the spans it prints back.
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding='utf-8')
+        except (AttributeError, ValueError):
+            pass
+
     sample = ' '.join(sys.argv[1:]) or (
         'Der 4-jährige Junge zeigt eine Mikrozephalie und Kleinwuchs. '
         'Die Eltern berichten über wiederkehrende Krampfanfälle seit dem '

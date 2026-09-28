@@ -12,7 +12,7 @@ Push everything into it: your prototype, any code, and your final presentation.
 
 ## The presentation
 
-**Five minutes, including 1 or 2 minutes for questions.** Cover three things:
+**Five minutes, including 1 or 2 minutes for questions.** Cover these three parts:
 
 1. **The problem** you addressed
 2. **How** you addressed it
@@ -20,12 +20,10 @@ Push everything into it: your prototype, any code, and your final presentation.
 
 ## Using the template
 
-Use the Google Slides [template](https://docs.google.com/presentation/d/13cpxe0OfA7dH_6qfcF7PorIjqRIaZrWkLTPf-ET3ge8/edit?slide=id.p1#slide=id.p1): please make your own copy, add this to your project folder, and push your chnages to GitHub when you are ready.
-The template is five slides with speaker notes on each giving timing and what judges are listening for.
+Use the Google Slides [template](https://docs.google.com/presentation/d/13cpxe0OfA7dH_6qfcF7PorIjqRIaZrWkLTPf-ET3ge8/edit?slide=id.p1#slide=id.p1). Please make your own copy, add this to your project folder, and push your changes to GitHub when you are ready.
+The template is five slides with speaker notes on each, giving timing and what judges are listening for.
 
 The grey italic lines are prompts — delete them as you go. The speaker notes are worth reading once before you start.
-
-**Please
 
 ## Timing
 

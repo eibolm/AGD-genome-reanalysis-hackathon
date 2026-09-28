@@ -1,0 +1,14 @@
+# HPO source data is downloaded locally, never committed.
+# hp.json is roughly 100 MB and phenotype.hpoa changes with every HPO release,
+# so the repo records where to get them (data/README.md) rather than the files.
+data/*
+!data/README.md
+
+# Derived indexes built from the ontology at startup
+*.idx
+*.pkl
+__pycache__/
+.venv/
+
+# Collected annotations are working data, not source
+annotations.jsonl

@@ -28,7 +28,7 @@ Can every claim be traced to source data?
 
 - **20–25** — Every claim traces to input data. Input data read correctly. Limitations and missing data shown, not hidden. Where an LLM writes prose, the facts still come from the data.
 - **14–19** — Mostly sound; one or two unsourced claims that don't mislead clinically.
-- **6–13** — Presents assumed values as if from Talos, or misreads a field in a misleading way.
+- **6–13** — Presents assumed values as if from the source data, or misreads a field in a misleading way.
 - **0–5** — Invents results, or implies a classification (e.g. ACMG) that was never computed.
 
 A beautiful interface that invents its result set loses to a plain one that doesn't.
@@ -58,6 +58,8 @@ About development acceleration and oversight, not whether the product contains a
 3. **Natural-language Talos** — Show the query the question produced. Then ask something unanswerable: does it decline, or guess?
 4. **Reanalysis triage** — Is the weighting inspectable or arbitrary? What happens to a case with no new evidence?
 5. **Open pitch** — Does it genuinely touch Talos output? Same four criteria as everyone else, no handicap or bonus.
+8. **Trial criteria** — Pick a family-history criterion and ask for the pedigree traversal. Does "breast cancer" match HPO descendants of Neoplasm of the breast, or a label string? What happens to a patient with no date of birth?
+9. **Undiagnosed investigation** — How is "undiagnosed" decided from the data? Show a raw PubCaseFinder response next to what the screen displays for the same patient.
 
 ## Awards
 
